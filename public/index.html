@@ -1,46 +1,69 @@
 <!doctype html>
 <html>
-<body>
-  <h2>AI Chat + Image</h2>
+  <head>
+    <meta charset="utf-8">
+    <title>AI Chat + Image</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 20px; background:#fafafa; }
+      h2 { margin-bottom: 10px; }
+      h3 { margin-top: 20px; }
+      textarea, input { width: 100%; max-width: 500px; padding: 8px; margin-top: 5px; }
+      button { margin-top: 8px; padding: 8px 14px; border:none; background:#0078ff; color:#fff; border-radius:6px; cursor:pointer; }
+      button:hover { background:#005fcc; }
+      #chatReply { background:#f4f4f4; padding:12px; margin-top:10px; border-radius:8px; max-width: 600px; max-height:300px; overflow-y:auto; }
+      #chatReply p { margin:6px 0; }
+      #chatReply b { color:#333; }
+      #imgResult img { max-width:300px; margin-top:10px; border-radius:8px; }
+    </style>
+  </head>
+  <body>
+    <h2>AI Chat + Image</h2>
 
-  <h3>Chat</h3>
-  <textarea id="chatMsg" rows="3" cols="40"></textarea><br>
-  <button id="sendChat">Send</button>
-  <div id="chatReply"></div>
+    <h3>Chat</h3>
+    <textarea id="chatMsg" rows="3" cols="40" placeholder="Type your message..."></textarea><br>
+    <button id="sendChat">Send</button>
+    <div id="chatReply"></div>
 
-  <h3>Image</h3>
-  <input id="imgPrompt" placeholder="Describe an image" size="40">
-  <button id="genImage">Generate</button>
-  <div id="imgResult"></div>
+    <h3>Image</h3>
+    <input id="imgPrompt" placeholder="Describe an image"><br>
+    <button id="genImage">Generate</button>
+    <div id="imgResult"></div>
 
-  <script>
-  async function post(path, data) {
-    const res = await fetch(path, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-    return res.json();
-  }
+    <script>
+      async function post(path, data) {
+        const res = await fetch(path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        return res.json();
+      }
 
-  document.getElementById("sendChat").onclick = async () => {
-    const msg = document.getElementById("chatMsg").value;
-    const r = await post("/chat", { message: msg });
-    document.getElementById("chatReply").innerText = r.reply || r.error;
-  };
+      document.getElementById("sendChat").onclick = async () => {
+        const msg = document.getElementById("chatMsg").value;
+        if (!msg.trim()) return;
+        const r = await post("/chat", { message: msg });
+        const replyDiv = document.getElementById("chatReply");
+        replyDiv.innerHTML += `<p><b>You:</b> ${msg}</p>`;
+        replyDiv.innerHTML += `<p><b>Bot:</b> ${r.reply || r.error}</p>`;
+        document.getElementById("chatMsg").value = "";
+        replyDiv.scrollTop = replyDiv.scrollHeight;
+      };
 
-  document.getElementById("genImage").onclick = async () => {
-    const prompt = document.getElementById("imgPrompt").value;
-    const r = await post("/image", { prompt });
-    if (r.image) {
-      const img = new Image();
-      img.src = r.image;
-      document.getElementById("imgResult").innerHTML = "";
-      document.getElementById("imgResult").appendChild(img);
-    } else {
-      document.getElementById("imgResult").innerText = r.error;
-    }
-  };
-  </script>
-</body>
+      document.getElementById("genImage").onclick = async () => {
+        const prompt = document.getElementById("imgPrompt").value;
+        if (!prompt.trim()) return;
+        const r = await post("/image", { prompt });
+        const imgResult = document.getElementById("imgResult");
+        imgResult.innerHTML = "";
+        if (r.image) {
+          const img = new Image();
+          img.src = r.image;
+          imgResult.appendChild(img);
+        } else {
+          imgResult.innerText = r.error;
+        }
+      };
+    </script>
+  </body>
 </html>
